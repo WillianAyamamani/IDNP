@@ -4,29 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
-import kotlin.random.Random
+import androidx.compose.ui.text.font.FontWeight
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,127 +30,100 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color(0xFFFFFBFE) // Fondo pastel claro
+                    color = Color(0xFFF8F9FA) // Fondo pastel claro
                 ) {
-                    val personas = generarPersonas()
-
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(personas) { persona ->
-                            TarjetaPersona(persona)
-                        }
-                    }
+                    PantallaAnimacionCirculo()
                 }
             }
         }
     }
 }
 
-// ---------------------- DATA CLASS ----------------------
-
-data class Persona(
-    val cui: String,
-    val nombres: String,
-    val apellidos: String,
-    val avatarUrl: String
-)
-
-// ---------------------- GENERACIÓN DE DATOS ----------------------
-
-fun generarPersonas(): List<Persona> {
-    val nombres = listOf(
-        "Lucas", "Valeria", "Sofía", "Mateo", "Camila",
-        "Tomás", "María", "Andrés", "Daniela", "Julián"
-    )
-    val apellidos = listOf(
-        "Gómez", "Fernández", "Rodríguez", "Pérez", "López",
-        "Martínez", "Torres", "Sánchez", "Ramírez", "Castro"
-    )
-
-    val lista = mutableListOf<Persona>()
-    for (i in 1..20) {
-        val nombre = nombres.random()
-        val apellido = apellidos.random()
-        val cui = "CUI - ${Random.nextInt(1000, 9999)}"
-        val avatarUrl = "https://randomuser.me/api/portraits/men/${i}.jpg"
-        lista.add(Persona(cui, nombre, apellido, avatarUrl))
-    }
-    return lista
-}
-
-// ---------------------- COMPONENTE DE TARJETA ----------------------
-
 @Composable
-fun TarjetaPersona(persona: Persona) {
-    var seleccionado by remember { mutableStateOf(false) }
+fun PantallaAnimacionCirculo() {
+    var tamano by remember { mutableStateOf(100.dp) }
 
-    // Paleta de colores pastel
-    val coloresPastel = listOf(
-        Color(0xFFFFF3E0), // naranja claro
-        Color(0xFFE1F5FE), // celeste
-        Color(0xFFF3E5F5), // lila
-        Color(0xFFFFEBEE), // rosa claro
-        Color(0xFFE8F5E9)  // verde menta
+    // Animación suave del tamaño
+    val tamanoAnimado by animateDpAsState(
+        targetValue = tamano,
+        animationSpec = tween(durationMillis = 600)
     )
 
-    val colorBase = coloresPastel.random()
-
-    val colorFondo by animateColorAsState(
-        targetValue = if (seleccionado) colorBase.copy(alpha = 0.8f) else Color.White,
-        animationSpec = tween(400)
+    // Animación de color basada en el tamaño
+    val colorCirculo by animateColorAsState(
+        targetValue = when {
+            tamano < 120.dp -> Color(0xFFFFCDD2) // rosa pastel
+            tamano < 180.dp -> Color(0xFFFFF9C4) // amarillo pastel
+            else -> Color(0xFFB3E5FC) // celeste pastel
+        },
+        animationSpec = tween(700)
     )
 
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .background(colorFondo, RoundedCornerShape(16.dp))
-            .border(1.dp, Color(0xFFDADADA), RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { seleccionado = !seleccionado }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxSize()
+            .background(Color(0xFFFFFBFE))
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        // Imagen del usuario
-        Image(
-            painter = rememberAsyncImagePainter(persona.avatarUrl),
-            contentDescription = null,
+
+        // Círculo animado
+        Canvas(
             modifier = Modifier
-                .size(70.dp)
-                .clip(RoundedCornerShape(50))
-                .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(50)),
-            contentScale = ContentScale.Crop
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Datos del usuario
-        Column(
-            verticalArrangement = Arrangement.Center
+                .size(tamanoAnimado)
+                .shadow(8.dp, CircleShape)
         ) {
-            Text(
-                text = persona.nombres,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF333333),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = persona.apellidos,
-                color = Color(0xFF555555),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = persona.cui,
-                color = Color(0xFF777777),
-                style = MaterialTheme.typography.labelMedium
-            )
+            drawCircle(color = colorCirculo)
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Contenedor de botones
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Botón para reducir
+            Button(
+                onClick = {
+                    if (tamano > 60.dp) tamano -= 20.dp
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF48FB1) // rosa pastel
+                ),
+                shape = CircleShape,
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(48.dp)
+            ) {
+                Text(
+                    text = "Reducir",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            // Botón para agrandar
+            Button(
+                onClick = {
+                    if (tamano < 220.dp) tamano += 20.dp
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF81D4FA) // celeste pastel
+                ),
+                shape = CircleShape,
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(48.dp)
+            ) {
+                Text(
+                    text = "Agrandar",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
         }
     }
 }
+
